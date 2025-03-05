@@ -27,13 +27,24 @@ def init_db():
 
     with current_app.open_resource('schema.sql') as f:
         db.executescript(f.read().decode('utf8'))
+    
+    # Create admin account
+    from werkzeug.security import generate_password_hash
+    try:
+        db.execute(
+            "INSERT INTO user (username, password, is_admin) VALUES (?, ?, ?)",
+            ("admin123", generate_password_hash("123456"), True)
+        )
+        db.commit()
+    except db.IntegrityError:
+        pass  # Admin account already exists
 
 
 @click.command('init-db')
 def init_db_command():
     """Clear the existing data and create new tables."""
     init_db()
-    click.echo('Đã khởi tạo lại database.')
+    click.echo('Database has been initialized.')
 
 
 sqlite3.register_converter(

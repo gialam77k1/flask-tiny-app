@@ -9,6 +9,14 @@ from flaskr.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('auth.login'))
+        return view(**kwargs)
+    return wrapped_view
+
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
@@ -53,6 +61,8 @@ def login():
             error = 'Incorrect username.'
         elif not check_password_hash(user['password'], password):
             error = 'Incorrect password.'
+        elif user['is_blocked']:
+            error = 'Your account has been blocked.'
 
         if error is None:
             session.clear()
@@ -62,6 +72,62 @@ def login():
         flash(error)
 
     return render_template('auth/login.html')
+
+@bp.route('/admin')
+@login_required
+def admin():
+    if not g.user['is_admin']:
+        return redirect(url_for('index'))
+    
+    db = get_db()
+    users = db.execute(
+        'SELECT u.*, COUNT(p.id) as post_count '
+        'FROM user u '
+        'LEFT JOIN post p ON u.id = p.author_id '
+        'WHERE u.id != ? '
+        'GROUP BY u.id', 
+        (g.user['id'],)
+    ).fetchall()
+    return render_template('auth/admin.html', users=users)
+
+@bp.route('/admin/toggle-block/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_block(user_id):
+    if not g.user['is_admin']:
+        return redirect(url_for('index'))
+    
+    db = get_db()
+    user = db.execute('SELECT * FROM user WHERE id = ?', (user_id,)).fetchone()
+    
+    if user:
+        db.execute(
+            'UPDATE user SET is_blocked = ? WHERE id = ?',
+            (not user['is_blocked'], user_id)
+        )
+        db.commit()
+        flash(f'User {user["username"]} has been {"blocked" if not user["is_blocked"] else "unblocked"}.')
+    
+    return redirect(url_for('auth.admin'))
+
+@bp.route('/admin/reset-password/<int:user_id>', methods=['POST'])
+@login_required
+def reset_password(user_id):
+    if not g.user['is_admin']:
+        return redirect(url_for('index'))
+    
+    db = get_db()
+    user = db.execute('SELECT * FROM user WHERE id = ?', (user_id,)).fetchone()
+    
+    if user:
+        new_password = request.form['new_password']
+        db.execute(
+            'UPDATE user SET password = ? WHERE id = ?',
+            (generate_password_hash(new_password), user_id)
+        )
+        db.commit()
+        flash(f'Password for user {user["username"]} has been reset successfully.')
+    
+    return redirect(url_for('auth.admin'))
 
 @bp.before_app_request
 def load_logged_in_user():

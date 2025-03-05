@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}User Management{% endblock %}</h1>
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover { color: black; }
+    .danger { color: black !important; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  {% if not g.user.is_admin %}
+    <p>You don't have permission to access this page.</p>
+  {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Status</th>
+          <th>Posts</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ 'Blocked' if user.is_blocked else 'Active' }}</td>
+            <td>{{ user.post_count }}</td>
+            <td>
+              <form action="{{ url_for('auth.toggle_block', user_id=user.id) }}" method="post" style="display: inline;">
+                <input type="submit" value="{{ 'Unblock' if user.is_blocked else 'Block' }}" class="danger">
+              </form>
+              <button onclick="openResetModal({{ user.id }}, '{{ user.username }}')" class="warning">Reset Password</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div id="resetPasswordModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeResetModal()">&times;</span>
+        <h2>Reset Password for <span id="modalUsername"></span></h2>
+        <form id="resetPasswordForm" method="post">
+          <label for="new_password">New Password:</label>
+          <input type="password" id="new_password" name="new_password" required>
+          <input type="submit" value="Reset Password" class="warning">
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function openResetModal(userId, username) {
+        document.getElementById('resetPasswordModal').style.display = 'block';
+        document.getElementById('modalUsername').textContent = username;
+        document.getElementById('resetPasswordForm').action = '/auth/admin/reset-password/' + userId;
+      }
+
+      function closeResetModal() {
+        document.getElementById('resetPasswordModal').style.display = 'none';
+      }
+
+      window.onclick = function(event) {
+        if (event.target == document.getElementById('resetPasswordModal')) {
+          closeResetModal();
+        }
+      }
+    </script>
+  {% endif %}
+{% endblock %}
