@@ -17,6 +17,25 @@
       <button type="submit" class="danger" onclick="return confirm('Are you sure you want to delete selected posts?');" style="display: none;" id="bulk-delete-btn">Delete Selected</button>
     </form>
   {% endif %}
+  
+  <div class="pagination" style="text-align: center; margin: 20px 0;">
+    {% if page > 1 %}
+      <a href="{{ url_for('blog.index', page=page-1) }}" class="page-link">&laquo; Previous</a>
+    {% endif %}
+    
+    {% for p in range(1, total_pages + 1) %}
+      <a href="{{ url_for('blog.index', page=p) }}" 
+         class="page-link {% if p == page %}active{% endif %}"
+         style="margin: 0 5px; padding: 5px 10px; text-decoration: none; 
+                {% if p == page %}background-color: #2e3436; color: white; border-radius: 3px;{% endif %}">
+        {{ p }}
+      </a>
+    {% endfor %}
+    
+    {% if page < total_pages %}
+      <a href="{{ url_for('blog.index', page=page+1) }}" class="page-link">Next &raquo;</a>
+    {% endif %}
+  </div>
   {% for post in posts %}
     <article class="post" data-author="{{ post['author_id'] }}">
       <header>
@@ -39,34 +58,92 @@
   {% endfor %}
 
   <script>
+    // Load selected post IDs from localStorage
+    const selectedPosts = new Set(JSON.parse(localStorage.getItem('selectedPosts') || '[]'));
+
+    // Initialize checkboxes based on localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+      const checkboxes = document.querySelectorAll('.post-checkbox');
+      checkboxes.forEach(cb => {
+        if (selectedPosts.has(cb.value)) {
+          cb.checked = true;
+        }
+      });
+      updateButtonsVisibility();
+    });
+
+    function updateButtonsVisibility() {
+      const selectAllBtn = document.getElementById('select-all-btn');
+      const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+      const selectedCount = selectedPosts.size;
+
+      selectAllBtn.style.display = selectedCount > 0 ? 'block' : 'none';
+      bulkDeleteBtn.style.display = selectedCount > 0 ? 'block' : 'none';
+
+      const checkboxes = document.querySelectorAll('.post-checkbox');
+      const allCurrentChecked = Array.from(checkboxes).every(cb => selectedPosts.has(cb.value));
+      selectAllBtn.textContent = allCurrentChecked ? 'Unselect All' : 'Select All';
+    }
+
+    // Show/hide bulk delete and select all buttons based on checkbox selection
     document.addEventListener('change', function(e) {
       if (e.target.matches('.post-checkbox')) {
-        const checkboxes = document.querySelectorAll('.post-checkbox');
-        const checkedCount = document.querySelectorAll('.post-checkbox:checked').length;
-        const selectAllBtn = document.getElementById('select-all-btn');
-        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-
-        selectAllBtn.style.display = checkedCount > 0 ? 'block' : 'none';
-        bulkDeleteBtn.style.display = checkedCount > 0 ? 'block' : 'none';
-
-        if (checkedCount === checkboxes.length) {
-          selectAllBtn.textContent = 'Unselect All';
+        const postId = e.target.value;
+        if (e.target.checked) {
+          selectedPosts.add(postId);
         } else {
-          selectAllBtn.textContent = 'Select All';
+          selectedPosts.delete(postId);
         }
+        localStorage.setItem('selectedPosts', JSON.stringify(Array.from(selectedPosts)));
+        updateButtonsVisibility();
       }
     });
 
+    // Select All functionality
     document.getElementById('select-all-btn')?.addEventListener('click', function() {
       const checkboxes = document.querySelectorAll('.post-checkbox');
-      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      const allCurrentChecked = Array.from(checkboxes).every(cb => selectedPosts.has(cb.value));
       
-      checkboxes.forEach(cb => cb.checked = !allChecked);
-      this.textContent = allChecked ? 'Select All' : 'Unselect All';
+      checkboxes.forEach(cb => {
+        if (allCurrentChecked) {
+          selectedPosts.delete(cb.value);
+          cb.checked = false;
+        } else {
+          selectedPosts.add(cb.value);
+          cb.checked = true;
+        }
+      });
       
-      document.getElementById('bulk-delete-btn').style.display = !allChecked ? 'block' : 'none';
+      localStorage.setItem('selectedPosts', JSON.stringify(Array.from(selectedPosts)));
+      updateButtonsVisibility();
     });
 
+    // Clear selected posts after successful deletion
+    document.getElementById('bulk-actions')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const selectedPostIds = Array.from(selectedPosts);
+      if (selectedPostIds.length === 0) {
+        alert('No posts selected for deletion.');
+        return false;
+      }
+      
+      if (!confirm('Are you sure you want to delete selected posts?')) {
+        return false;
+      }
+
+      // Create hidden inputs for each selected post ID
+      selectedPostIds.forEach(postId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'post_ids[]';
+        input.value = postId;
+        this.appendChild(input);
+      });
+
+      localStorage.removeItem('selectedPosts');
+      this.submit();
+    });
+    // Filter posts by current user
     document.getElementById('my-posts-toggle')?.addEventListener('change', function(e) {
       const posts = document.querySelectorAll('.post');
       const currentUserId = '{{ g.user.id if g.user else "" }}';
