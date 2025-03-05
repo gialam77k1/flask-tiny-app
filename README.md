@@ -5,9 +5,13 @@
 - *Mã số sinh viên*: 22685611
 
 ## 📝 Mô tả dự án  
-
-- Người dùng có thể thực hiện đăng ký tài khoản rồi đăng nhập. Sau khi đăng nhập người dùng có thể sử dụng các chức năng của ứng dụng như *tạo, chỉnh sửa và xóa bài viết nếu cần*.   
-- Ngoài ra còn có chức năng admin có thể quản lý user.
+- Người dùng : 
+    - Thực hiện đăng ký rồi đăng nhập để sử dụng blog.
+    - Có thể tạo, chỉnh sửa hoặc xóa bài viết theo ý muốn.
+- Quản lý người dùng:
+    - Admin có thể **block** người dùng nếu cần.
+    - Admin có thể đổi mật khẩu mới cho người dùng.
+- Ngoài ra blog ở version cuối cùng chỉ có 10 bài viết trên 1 trang.
 ## ⚙️ Hướng dẫn cài đặt và chạy  
 ***Yêu cầu hệ thống***: Python *3.10* hoặc mới hơn. 
 
