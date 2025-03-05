@@ -96,3 +96,31 @@ def delete(id):
     db.execute('DELETE FROM post WHERE id = ?', (id,))
     db.commit()
     return redirect(url_for('blog.index'))
+
+@bp.route('/bulk-delete', methods=['POST'])
+@login_required
+def bulk_delete():
+    post_ids = request.form.getlist('post_ids[]')
+    if not post_ids:
+        flash('No posts selected for deletion.')
+        return redirect(url_for('blog.index'))
+    
+    db = get_db()
+    # Verify all posts belong to current user
+    for post_id in post_ids:
+        post = db.execute(
+            'SELECT author_id FROM post WHERE id = ?', (post_id,)
+        ).fetchone()
+        if not post or post['author_id'] != g.user['id']:
+            abort(403)
+    
+    # Delete all selected posts
+    db.execute(
+        'DELETE FROM post WHERE id IN ({})'.format(
+            ','.join('?' * len(post_ids))
+        ),
+        post_ids
+    )
+    db.commit()
+    flash(f'{len(post_ids)} posts have been deleted.')
+    return redirect(url_for('blog.index'))

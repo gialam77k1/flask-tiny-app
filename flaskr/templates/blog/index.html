@@ -4,13 +4,25 @@
   <h1>{% block title %}Posts{% endblock %}</h1>
   {% if g.user %}
     <a class="action" href="{{ url_for('blog.create') }}">New</a>
+    <form id="filter-form" style="display: inline;">
+      <label><input type="checkbox" id="my-posts-toggle"> Show only my posts</label>
+    </form>
   {% endif %}
 {% endblock %}
 
 {% block content %}
+  {% if g.user %}
+    <form id="bulk-actions" method="post" action="{{ url_for('blog.bulk_delete') }}">
+      <button type="button" id="select-all-btn" class="secondary" style="display: none;">Select All</button>
+      <button type="submit" class="danger" onclick="return confirm('Are you sure you want to delete selected posts?');" style="display: none;" id="bulk-delete-btn">Delete Selected</button>
+    </form>
+  {% endif %}
   {% for post in posts %}
-    <article class="post">
+    <article class="post" data-author="{{ post['author_id'] }}">
       <header>
+        {% if g.user and g.user['id'] == post['author_id'] %}
+          <input type="checkbox" name="post_ids[]" value="{{ post['id'] }}" form="bulk-actions" class="post-checkbox" style="float: right;">
+        {% endif %}
         <div>
           <h1>{{ post['title'] }}</h1>
           <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
@@ -25,4 +37,47 @@
       <hr>
     {% endif %}
   {% endfor %}
+
+  <script>
+    document.addEventListener('change', function(e) {
+      if (e.target.matches('.post-checkbox')) {
+        const checkboxes = document.querySelectorAll('.post-checkbox');
+        const checkedCount = document.querySelectorAll('.post-checkbox:checked').length;
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+
+        selectAllBtn.style.display = checkedCount > 0 ? 'block' : 'none';
+        bulkDeleteBtn.style.display = checkedCount > 0 ? 'block' : 'none';
+
+        if (checkedCount === checkboxes.length) {
+          selectAllBtn.textContent = 'Unselect All';
+        } else {
+          selectAllBtn.textContent = 'Select All';
+        }
+      }
+    });
+
+    document.getElementById('select-all-btn')?.addEventListener('click', function() {
+      const checkboxes = document.querySelectorAll('.post-checkbox');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(cb => cb.checked = !allChecked);
+      this.textContent = allChecked ? 'Select All' : 'Unselect All';
+      
+      document.getElementById('bulk-delete-btn').style.display = !allChecked ? 'block' : 'none';
+    });
+
+    document.getElementById('my-posts-toggle')?.addEventListener('change', function(e) {
+      const posts = document.querySelectorAll('.post');
+      const currentUserId = '{{ g.user.id if g.user else "" }}';
+      
+      posts.forEach(post => {
+        if (e.target.checked) {
+          post.style.display = post.dataset.author === currentUserId ? 'block' : 'none';
+        } else {
+          post.style.display = 'block';
+        }
+      });
+    });
+  </script>
 {% endblock %}
