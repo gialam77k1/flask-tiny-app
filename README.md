@@ -34,7 +34,7 @@ python -m venv venv #Lệnh này dùng để tạo môi trường ảo có tên 
 ```PowerShell
 venv\Scripts\activate  #Lệnh này dùng để kích hoạt môi trường ảo venv đã tạo
 ```
-3. Tải các framework cần thiết
+3. Tải các framework cần thiết:
 ```PowerShell
 python.exe -m pip install --upgrade pip #Lệnh này đảm bảo pip ở phiên bản mới nhất để tải được requirements.txt mà không gặp lỗi
 ```
