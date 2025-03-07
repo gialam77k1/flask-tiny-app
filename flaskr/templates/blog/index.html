@@ -3,18 +3,18 @@
 {% block header %}
   <h1>{% block title %}Posts{% endblock %}</h1>
   {% if g.user %}
-    <a class="action" href="{{ url_for('blog.create') }}">New</a>
-    <form id="filter-form" style="display: inline;">
-      <label><input type="checkbox" id="my-posts-toggle"> Show only my posts</label>
-    </form>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <a class="btn primary" href="#" id="my-posts-toggle">Show only my posts</a>
+      <a class="btn" href="{{ url_for('blog.create') }}">New</a>
+    </div>
   {% endif %}
 {% endblock %}
 
 {% block content %}
   {% if g.user %}
     <form id="bulk-actions" method="post" action="{{ url_for('blog.bulk_delete') }}">
-      <button type="button" id="select-all-btn" class="secondary" style="display: none;">Select All</button>
-      <button type="submit" class="danger" onclick="return confirm('Are you sure you want to delete selected posts?');" style="display: none;" id="bulk-delete-btn">Delete Selected</button>
+      <button type="button" id="select-all-btn" class="btn primary" style="display: none;">Select All</button>
+      <button type="submit" class="btn danger" onclick="return confirm('Are you sure you want to delete selected posts?');" style="display: none;" id="bulk-delete-btn">Delete Selected</button>
     </form>
   {% endif %}
   
@@ -26,8 +26,7 @@
     {% for p in range(1, total_pages + 1) %}
       <a href="{{ url_for('blog.index', page=p) }}" 
          class="page-link {% if p == page %}active{% endif %}"
-         style="margin: 0 5px; padding: 5px 10px; text-decoration: none; 
-                {% if p == page %}background-color: #2e3436; color: white; border-radius: 3px;{% endif %}">
+         style="margin: 0 5px; padding: 5px 10px; text-decoration: none;">
         {{ p }}
       </a>
     {% endfor %}
@@ -47,7 +46,7 @@
           <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
         </div>
         {% if g.user['id'] == post['author_id'] %}
-          <a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
+          <a class="action btn" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
         {% endif %}
       </header>
       <p class="body">{{ post['body'] }}</p>
@@ -70,6 +69,15 @@
         }
       });
       updateButtonsVisibility();
+      
+      // Initialize filter state
+      const showOnlyMyPosts = localStorage.getItem('showOnlyMyPosts') === 'true';
+      const toggleButton = document.getElementById('my-posts-toggle');
+      
+      if (toggleButton && showOnlyMyPosts) {
+        toggleButton.textContent = 'Show all posts';
+        filterPosts(true);
+      }
     });
 
     function updateButtonsVisibility() {
@@ -83,6 +91,20 @@
       const checkboxes = document.querySelectorAll('.post-checkbox');
       const allCurrentChecked = Array.from(checkboxes).every(cb => selectedPosts.has(cb.value));
       selectAllBtn.textContent = allCurrentChecked ? 'Unselect All' : 'Select All';
+    }
+
+    function filterPosts(showOnlyMine) {
+      const posts = document.querySelectorAll('.post');
+      const currentUserId = '{{ g.user.id if g.user else "" }}';
+      
+      posts.forEach(post => {
+        const isVisible = !showOnlyMine || post.dataset.author === currentUserId;
+        post.style.display = isVisible ? 'block' : 'none';
+        const nextHr = post.nextElementSibling;
+        if (nextHr && nextHr.tagName === 'HR') {
+          nextHr.style.display = isVisible ? 'block' : 'none';
+        }
+      });
     }
 
     // Show/hide bulk delete and select all buttons based on checkbox selection
@@ -131,7 +153,6 @@
         return false;
       }
 
-      // Create hidden inputs for each selected post ID
       selectedPostIds.forEach(postId => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -143,18 +164,16 @@
       localStorage.removeItem('selectedPosts');
       this.submit();
     });
+
     // Filter posts by current user
-    document.getElementById('my-posts-toggle')?.addEventListener('change', function(e) {
-      const posts = document.querySelectorAll('.post');
-      const currentUserId = '{{ g.user.id if g.user else "" }}';
+    document.getElementById('my-posts-toggle')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      const isShowingAll = this.textContent === 'Show all posts';
       
-      posts.forEach(post => {
-        if (e.target.checked) {
-          post.style.display = post.dataset.author === currentUserId ? 'block' : 'none';
-        } else {
-          post.style.display = 'block';
-        }
-      });
+      filterPosts(!isShowingAll);
+      
+      this.textContent = isShowingAll ? 'Show only my posts' : 'Show all posts';
+      localStorage.setItem('showOnlyMyPosts', !isShowingAll);
     });
   </script>
 {% endblock %}

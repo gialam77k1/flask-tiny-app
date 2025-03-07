@@ -3,33 +3,18 @@
 {% block header %}
   <h1>{% block title %}User Management{% endblock %}</h1>
   <style>
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
-    }
-    .modal-content {
-      background-color: #fefefe;
-      margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 80%;
-      max-width: 500px;
-    }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
     .close:hover { color: black; }
     .danger { color: black !important; }
+    .settings-section { margin-bottom: 2em; padding: 1em; background: #f5f5f5; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+    th, td { padding: 0.5em; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f5f5f5; }
+    tr:hover { background-color: #f9f9f9; }
+    .user-actions { display: flex; gap: 0.5em; }
+    .blocked { background-color: #ffebee; }
   </style>
 {% endblock %}
 
@@ -37,60 +22,48 @@
   {% if not g.user.is_admin %}
     <p>You don't have permission to access this page.</p>
   {% else %}
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Status</th>
-          <th>Posts</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users %}
-          <tr>
-            <td>{{ user.username }}</td>
-            <td>{{ 'Blocked' if user.is_blocked else 'Active' }}</td>
-            <td>{{ user.post_count }}</td>
-            <td>
-              <form action="{{ url_for('auth.toggle_block', user_id=user.id) }}" method="post" style="display: inline;">
-                <input type="submit" value="{{ 'Unblock' if user.is_blocked else 'Block' }}" class="danger">
-              </form>
-              <button onclick="openResetModal({{ user.id }}, '{{ user.username }}')" class="warning">Reset Password</button>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <div id="resetPasswordModal" class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeResetModal()">&times;</span>
-        <h2>Reset Password for <span id="modalUsername"></span></h2>
-        <form id="resetPasswordForm" method="post">
-          <label for="new_password">New Password:</label>
-          <input type="password" id="new_password" name="new_password" required>
-          <input type="submit" value="Reset Password" class="warning">
-        </form>
-      </div>
+    <div class="settings-section">
+      <h2>Blog Settings</h2>
+      <form action="{{ url_for('auth.update_settings') }}" method="post" class="settings-form">
+        <label for="posts_per_page">Posts per page:</label>
+        <input type="number" id="posts_per_page" name="posts_per_page" value="{{ posts_per_page }}" min="1" max="50" required>
+        <input type="submit" value="Save Settings" class="btn primary">
+      </form>
     </div>
 
-    <script>
-      function openResetModal(userId, username) {
-        document.getElementById('resetPasswordModal').style.display = 'block';
-        document.getElementById('modalUsername').textContent = username;
-        document.getElementById('resetPasswordForm').action = '/auth/admin/reset-password/' + userId;
-      }
-
-      function closeResetModal() {
-        document.getElementById('resetPasswordModal').style.display = 'none';
-      }
-
-      window.onclick = function(event) {
-        if (event.target == document.getElementById('resetPasswordModal')) {
-          closeResetModal();
-        }
-      }
-    </script>
+    <div class="users-section">
+      <h2>User Management</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Status</th>
+            <th>Posts</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr class="{% if user.is_blocked %}blocked{% endif %}">
+              <td>{{ user.username }}</td>
+              <td>{% if user.is_blocked %}Blocked{% else %}Active{% endif %}</td>
+              <td>{{ user.post_count }}</td>
+              <td class="user-actions">
+                {% if g.user.id != user.id %}
+                  <form action="{{ url_for('auth.toggle_block', user_id=user.id) }}" method="post" style="display: inline;">
+                    <input type="submit" value="{% if user.is_blocked %}Unblock{% else %}Block{% endif %}" 
+                           class="btn {% if user.is_blocked %}primary{% else %}danger{% endif %}">
+                  </form>
+                  <form action="{{ url_for('auth.reset_password', user_id=user.id) }}" method="post" style="display: inline;">
+                    <input type="password" name="new_password" required placeholder="New password">
+                    <input type="submit" value="Reset Password" class="btn primary">
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
 {% endblock %}

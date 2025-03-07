@@ -4,21 +4,21 @@
     {% if g.user and g.user.is_admin %}
     <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
     {% endif %}
-<nav>
-  <h1><a href="{{ url_for('index') }}">Flask Simple Blog</a></h1>
-  <ul>
-    {% if g.user %}
-      <li><span>{{ g.user['username'] }}</span>
-      {% if g.user.is_admin %}
-          <li><a href="{{ url_for('auth.admin') }}">Admin</a>
-          {% endif %}
-          <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
-    {% else %}
-      <li><a href="{{ url_for('auth.register') }}">Register</a>
-      <li><a href="{{ url_for('auth.login') }}">Log In</a>
-    {% endif %}
-  </ul>
-</nav>
+  <nav>
+    <h1><a href="{{ url_for('index') }}">Flask Simple Blog</a></h1>
+    <ul class="nav-links">
+      {% if g.user %}
+        <li><span>{{ g.user['username'] }}</span></li>
+        {% if g.user.is_admin %}
+        <li><a class="btn" href="{{ url_for('auth.admin') }}">Admin</a></li>
+        {% endif %}
+          <li><a class="btn" href="{{ url_for('auth.logout') }}">Log Out</a></li>
+        {% else %}
+          <li><a class="btn" href="{{ url_for('auth.register') }}">Register</a></li>
+          <li><a class="btn" href="{{ url_for('auth.login') }}">Log In</a></li>
+        {% endif %}
+      </ul>
+    </nav>
 <section class="content">
   <header>
     {% block header %}{% endblock %}

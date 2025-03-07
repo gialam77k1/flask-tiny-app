@@ -12,7 +12,9 @@ bp = Blueprint('blog', __name__)
 def index():
     db = get_db()
     page = request.args.get('page', 1, type=int)
-    per_page = 10
+    # Get posts per page from settings
+    posts_per_page = db.execute('SELECT value FROM settings WHERE key = "posts_per_page"').fetchone()
+    per_page = int(posts_per_page['value']) if posts_per_page else 10
     offset = (page - 1) * per_page
     
     # Get total number of posts
@@ -104,6 +106,7 @@ def delete(id):
     db = get_db()
     db.execute('DELETE FROM post WHERE id = ?', (id,))
     db.commit()
+    flash('Post was successfully deleted.')
     return redirect(url_for('blog.index'))
 
 @bp.route('/bulk-delete', methods=['POST'])

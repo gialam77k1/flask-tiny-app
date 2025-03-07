@@ -128,10 +128,66 @@ header .action {
 }
 
 input.danger {
-    color: #cc2f2e;
+    color: white;
+    background-color: #cc2f2e;
 }
 
 input[type=submit] {
     align-self: start;
     min-width: 10em;
+}
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 4px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.btn:hover {
+  background-color: #357abd;
+}
+.btn.primary {
+  background-color: #2ecc71;
+}
+.btn.primary:hover {
+  background-color: #27ae60;
+}
+.btn.danger {
+  background-color: #e74c3c;
+  color: white;
+}
+.btn.danger:hover {
+  background-color: #c0392b;
+}
+.post-hidden {
+  display: none !important;
+}
+.post-visible + hr {
+  display: block;
+}
+.post-hidden + hr {
+  display: none;
+}
+.page-link {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 4px;
+  border: 1px solid #4a90e2;
+  border-radius: 4px;
+  color: #4a90e2;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+.page-link:hover {
+  background-color: #4a90e2;
+  color: white;
+}
+.page-link.active {
+  background-color: #4a90e2;
+  color: white;
 }

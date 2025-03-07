@@ -88,7 +88,66 @@ def admin():
         'GROUP BY u.id', 
         (g.user['id'],)
     ).fetchall()
-    return render_template('auth/admin.html', users=users)
+    
+    # Get current posts per page setting
+    posts_per_page = db.execute('SELECT value FROM settings WHERE key = "posts_per_page"').fetchone()
+    posts_per_page = int(posts_per_page['value']) if posts_per_page else 10
+    
+    return render_template('auth/admin.html', users=users, posts_per_page=posts_per_page)
+
+@bp.route('/admin/update-settings', methods=['POST'])
+@login_required
+def update_settings():
+    if not g.user['is_admin']:
+        abort(403)
+    
+    posts_per_page = request.form.get('posts_per_page', type=int)
+    if posts_per_page:
+        db = get_db()
+        db.execute('UPDATE settings SET value = ? WHERE key = ?', (posts_per_page, 'posts_per_page'))
+        db.commit()
+        flash('Settings updated successfully.')
+    
+    return redirect(url_for('auth.admin'))
+
+@bp.route('/admin/toggle-admin/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_admin(user_id):
+    if not g.user['is_admin']:
+        return redirect(url_for('index'))
+    
+    if g.user['id'] == user_id:
+        flash('You cannot change your own admin status.')
+        return redirect(url_for('auth.admin'))
+    
+    db = get_db()
+    user = db.execute('SELECT * FROM user WHERE id = ?', (user_id,)).fetchone()
+    
+    if user is None:
+        flash('User not found.')
+        return redirect(url_for('auth.admin'))
+    
+    new_status = not user['is_admin']
+    db.execute('UPDATE user SET is_admin = ? WHERE id = ?', (new_status, user_id))
+    db.commit()
+    
+    flash(f"Admin status {'granted to' if new_status else 'removed from'} {user['username']}.")
+    return redirect(url_for('auth.admin'))
+    if not g.user['is_admin']:
+        return redirect(url_for('index'))
+    
+    posts_per_page = request.form.get('posts_per_page', type=int)
+    if not posts_per_page or posts_per_page < 1 or posts_per_page > 50:
+        flash('Invalid posts per page value. Must be between 1 and 50.')
+        return redirect(url_for('auth.admin'))
+    
+    db = get_db()
+    db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+               ('posts_per_page', str(posts_per_page)))
+    db.commit()
+    
+    flash('Settings updated successfully.')
+    return redirect(url_for('auth.admin'))
 
 @bp.route('/admin/toggle-block/<int:user_id>', methods=['POST'])
 @login_required
