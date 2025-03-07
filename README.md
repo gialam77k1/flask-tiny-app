@@ -19,7 +19,7 @@
 1. Clone the repository
 - Đầu tiên để bạn cần clone reposity.
 ```PowerShell
-git clone https://github.com/NamNam2004-77k1/flask-tiny-app.git #Lệnh này dùng để clone repo 
+git clone https://github.com/gialam77k1/flask-tiny-app.git #Lệnh này dùng để clone repo 
 ```
 ```PowerShell
 cd flask-tiny-app #Lệnh này dùng để di chuyển vào thư mục app
