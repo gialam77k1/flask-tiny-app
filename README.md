@@ -11,7 +11,7 @@
 - Quản lý người dùng:
     - Admin có thể **block** người dùng nếu cần.
     - Admin có thể đổi mật khẩu mới cho người dùng.
-- Ngoài ra blog ở version cuối cùng chỉ có 10 bài viết trên 1 trang.
+    - Admin cũng có thể quyết định số lượng bài viết trên mỗi trang.
 ## ⚙️ Hướng dẫn cài đặt và chạy  
 ***Yêu cầu hệ thống***: Python *3.10* hoặc mới hơn. 
 
